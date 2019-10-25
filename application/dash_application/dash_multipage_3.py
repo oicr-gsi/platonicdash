@@ -1,6 +1,7 @@
 import dash_html_components as html
 import dash_core_components as core
-from dash.dependencies import Input, Output
+from dash.dependencies import Input, Output, State
+from dash.exceptions import PreventUpdate
 import pandas as pd
 import plotly.graph_objects as go
 from .dash_id import init_ids
@@ -12,7 +13,7 @@ df = pd.read_csv(
 
 page_name = 'complex-page'
 
-ids = init_ids(['myGraph', 'year-slider', 'url'])
+ids = init_ids(['myGraph', 'year-slider', 'url', 'dropdown'])
 
 layout = html.Div([
     core.Location(id=ids['url'], refresh=False),
@@ -24,6 +25,14 @@ layout = html.Div([
         value=df['year'].min(),
         marks={str(year): str(year) for year in df['year'].unique()},
         step=None
+    ),
+    core.Dropdown(
+        id=ids['dropdown'],
+        options = [
+            {'label': 'Real', 'value': 'real'},
+            {'label': 'Fake', 'value': 'fake'}
+        ],
+        value = 'real'
     )
 ])
 
@@ -38,9 +47,12 @@ def init_callbacks(dash_app):
 
     @dash_app.callback(
         Output(ids['myGraph'], 'figure'),
-        [Input(ids['url'], 'hash')])
+        [Input(ids['url'], 'hash')],
+        [State(ids['dropdown'], 'value')])
     @dash_app.server.cache.memoize(timeout=60)
-    def update_figure(selected_year):
+    def update_figure(selected_year, dropdown_value):
+        if(dropdown_value == 'fake'):
+            raise PreventUpdate
         selected_year = int(selected_year[1:])
         filtered_df = df[df.year == selected_year]
         traces = []
