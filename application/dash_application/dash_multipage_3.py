@@ -38,14 +38,19 @@ layout = html.Div([
 
 def init_callbacks(dash_app):
     @dash_app.callback(
+        Output(ids['year-slider'], 'disabled'),
+        [Input(ids['dropdown'], 'value')]
+    )
+    def disableSliderOnFake(dropdown_value):
+        # if 'fake', slider disabled is true
+        return dropdown_value == 'fake'
+
+    @dash_app.callback(
         Output(ids['url'], 'hash'),
-        [Input(ids['year-slider'], 'value')],
-        [State(ids['dropdown'], 'value')]
+        [Input(ids['year-slider'], 'value')]
     )
     @dash_app.server.cache.memoize(timeout=60)
-    def onSlide(value, dropdown_value):
-        if dropdown_value == 'fake':
-            raise PreventUpdate
+    def onSlide(value):
         return '#'+str(value)
 
     @dash_app.callback(
