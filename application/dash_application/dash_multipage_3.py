@@ -55,9 +55,12 @@ def init_callbacks(dash_app):
 
     @dash_app.callback(
         Output(ids['myGraph'], 'figure'),
-        [Input(ids['url'], 'hash')])
+        [Input(ids['url'], 'hash')],
+        [State(ids['dropdown'], 'value')])
     @dash_app.server.cache.memoize(timeout=60)
-    def update_figure(selected_year):
+    def update_figure(selected_year, dropdown_value):
+        if dropdown_value == 'fake':
+            raise PreventUpdate
         selected_year = int(selected_year[1:])
         filtered_df = df[df.year == selected_year]
         traces = []
