@@ -39,20 +39,20 @@ layout = html.Div([
 def init_callbacks(dash_app):
     @dash_app.callback(
         Output(ids['url'], 'hash'),
-        [Input(ids['year-slider'], 'value')]
+        [Input(ids['year-slider'], 'value')],
+        [State(ids['dropdown'], 'value')]
     )
     @dash_app.server.cache.memoize(timeout=60)
-    def onSlide(value):
+    def onSlide(value, dropdown_value):
+        if dropdown_value == 'fake':
+            raise PreventUpdate
         return '#'+str(value)
 
     @dash_app.callback(
         Output(ids['myGraph'], 'figure'),
-        [Input(ids['url'], 'hash')],
-        [State(ids['dropdown'], 'value')])
+        [Input(ids['url'], 'hash')])
     @dash_app.server.cache.memoize(timeout=60)
-    def update_figure(selected_year, dropdown_value):
-        if(dropdown_value == 'fake'):
-            raise PreventUpdate
+    def update_figure(selected_year):
         selected_year = int(selected_year[1:])
         filtered_df = df[df.year == selected_year]
         traces = []
