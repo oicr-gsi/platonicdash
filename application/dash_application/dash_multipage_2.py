@@ -22,5 +22,8 @@ layout = html.Div([
     core.Link('Go back to home', href='/dash/multipage')
 ])
 
+## Callback for this page is defined in dash_multipage_index 
+## to demonstrate all callbacks existing in memory and 
+## unique localized ID system.
 def init_callbacks(dash_app):
     return
