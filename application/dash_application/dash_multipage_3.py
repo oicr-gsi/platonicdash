@@ -42,7 +42,7 @@ layout = html.Div([
             {'label': 'Editable', 'value': 'editable'},
             {'label': 'Uneditable', 'value': 'uneditable'}
         ],
-        value = 'Editable'
+        value = 'editable'
     )
 ])
 
