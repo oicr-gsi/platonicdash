@@ -7,17 +7,25 @@ import plotly.graph_objects as go
 from .dash_id import init_ids
 from flask_caching import Cache
 
+## Displays a page containing a scatter plot, a slider which controls which
+## data gets displayed on the graph (via the URL), and a dropdown which locks
+## or unlocks changing the graph by slider or URL.
+
+## Use pandas to read data from csv
 df = pd.read_csv(
     'https://raw.githubusercontent.com/plotly/'
     'datasets/master/gapminderDataFiveYear.csv')
 
 page_name = 'complex-page'
 
-ids = init_ids(['myGraph', 'year-slider', 'url', 'dropdown'])
+ids = init_ids(['scatter-plot', 'year-slider', 'url', 'dropdown'])
 
 layout = html.Div([
     core.Location(id=ids['url'], refresh=False),
-    core.Graph(id=ids['myGraph']),
+
+    ## Graph is empty by default. Callback will automatically draw graph here
+    ## on page load.
+    core.Graph(id=ids['scatter-plot']),
     core.Slider(
         id=ids['year-slider'],
         min=df['year'].min(),
@@ -26,25 +34,31 @@ layout = html.Div([
         marks={str(year): str(year) for year in df['year'].unique()},
         step=None
     ),
+    ## This dropdown controls whether the slider and URL are able to update the
+    ## graph.
     core.Dropdown(
         id=ids['dropdown'],
         options = [
-            {'label': 'Real', 'value': 'real'},
-            {'label': 'Fake', 'value': 'fake'}
+            {'label': 'Editable', 'value': 'editable'},
+            {'label': 'Uneditable', 'value': 'uneditable'}
         ],
-        value = 'real'
+        value = 'editable'
     )
 ])
 
 def init_callbacks(dash_app):
+    ## On change of dropdown's value, return true if 'uneditable'.
+    ## Return value gets output to 'disabled' property of slider,
+    ## greying out and freezing slider interactivity.
     @dash_app.callback(
         Output(ids['year-slider'], 'disabled'),
         [Input(ids['dropdown'], 'value')]
     )
-    def disableSliderOnFake(dropdown_value):
-        # if 'fake', slider disabled is true
-        return dropdown_value == 'fake'
+    def disableSliderOnUneditable(dropdown_value):
+        # if 'uneditable', slider disabled is true
+        return dropdown_value == 'uneditable'
 
+    ## On change of slider's value, take value and make it the URL's hash
     @dash_app.callback(
         Output(ids['url'], 'hash'),
         [Input(ids['year-slider'], 'value')]
@@ -53,19 +67,32 @@ def init_callbacks(dash_app):
     def onSlide(value):
         return '#'+str(value)
 
+    ## State allows you to get the values of layout elements without
+    ## triggering callbacks on change in the element.
+    ## On change of URL (including initial access) build a scatter plot
+    ## based on hash (eg #1997), unless dropdown has been set to 'uneditable',
+    ## return graph to display in layout.
     @dash_app.callback(
-        Output(ids['myGraph'], 'figure'),
+        Output(ids['scatter-plot'], 'figure'),
         [Input(ids['url'], 'hash')],
         [State(ids['dropdown'], 'value')])
     @dash_app.server.cache.memoize(timeout=60)
     def update_figure(selected_year, dropdown_value):
-        if dropdown_value == 'fake':
+        if dropdown_value == 'uneditable':
+            ## raising PreventUpdate is one of two ways to cancel executing
+            ## a callback. Please see the Dash documentation for more details.
             raise PreventUpdate
+        
+        ## Remove first character (#) from hash and convert to int
         selected_year = int(selected_year[1:])
         filtered_df = df[df.year == selected_year]
         traces = []
         for i in filtered_df.continent.unique():
             df_by_continent = filtered_df[filtered_df['continent'] == i]
+
+            ## Use go.Scattergl (and other WebGL graphs) whenever possible for
+            ## improved performance. These render using the client's GPU rather
+            ## than as SVG.
             traces.append(go.Scattergl(
                 x=df_by_continent['gdpPercap'],
                 y=df_by_continent['lifeExp'],

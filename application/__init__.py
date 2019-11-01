@@ -2,6 +2,7 @@ from flask import Flask
 from flask_caching import Cache
 from prometheus_flask_exporter import PrometheusMetrics
 
+## Set up Flask application, attach extensions, and load configuration
 def create_app():
     # Construct new Flask core
     app = Flask(__name__,
@@ -17,10 +18,10 @@ def create_app():
     app.config.from_object('config.Config')
 
     with app.app_context():
-        # Import Flask routes
+        # Loads Flask routes into memory, allowing Flask to watch for URL events
         from . import routes
 
-        #Import Dash application
+        # Import Dash application
         from .dash_application import dash_routes
         app = dash_routes.add_dash(app)
 
