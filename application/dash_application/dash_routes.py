@@ -13,7 +13,8 @@ def add_dash(server):
         page.init_callbacks(dash_app)
 
     ## Set your initial Dash page's layout to this variable 
-    dash_app.layout = 
+    from . import dash_multipage_index
+    dash_app.layout = dash_multipage_index.layout
 
     ## Return the server object from Dash to overwrite Flask server object
     return dash_app.server
