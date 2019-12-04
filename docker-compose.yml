@@ -1,0 +1,36 @@
+version: "3.7"
+
+services:
+  webapp:
+    container_name: webapp
+    build: 
+      context: .
+      dockerfile: Dockerfile
+    restart: always
+    ports:
+      - '5000:5000'
+#    secrets:
+#      - ssh_passphrase
+
+  nginx:
+    image: nginx:1.15.12-alpine
+    ports:
+      - "80:80"
+    volumes:
+      - type: bind
+        source: ".docker/nginx/http.conf"
+        target: "/etc/nginx/conf.d/default.conf"
+        volume:
+          nocopy: true
+    links:
+      - webapp
+    depends_on:
+      - webapp
+
+# If your SSH key requires a passphrase, uncomment out the `ssh_passphrase` lines in the webapp service and in the secrets section below
+# Create a file at .passphrase that contains your passphrase. No other changes are necessary.
+secrets:
+  mongo_password:
+    file: .mongopass
+#  ssh_passphrase:
+#    file: .passphrase
